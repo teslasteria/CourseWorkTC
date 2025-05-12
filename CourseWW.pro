@@ -7,7 +7,8 @@ SOURCES += \
         ast.cpp \
         lexer.cpp \
         main.cpp \
-        parser.cpp
+        parser.cpp \
+        semanticanalyzer.cpp
 
 DISTFILES += \ \
     program.txt
@@ -16,4 +17,5 @@ HEADERS += \
     ast.h \
     error.h \
     lexer.h \
-    parser.h
+    parser.h \
+    semanticanalyzer.h
