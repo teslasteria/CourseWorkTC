@@ -76,153 +76,75 @@ std::unique_ptr<ASTNode> Parser::parseCompound() {
 }
 
 std::unique_ptr<ASTNode> Parser::parseStatement() {
-    std::cout << "Parsing statement: " << current().value << std::endl;
+    std::cout << "Current token: " << current().value << ", next token: " << peek().value << std::endl;
     if (match(KEYWORD, "begin")) {
         return parseCompound();
     }
-    else if (match(IDENTIFIER) && peek().value == ":=") {
+    else if (match(IDENTIFIER) && peek().value == ":") {  // Объявление типа: 'x : %'
+        return parseVariableDeclaration();
+    }
+    else if (match(IDENTIFIER) && peek().value == ":=") {  // Присваивание: 'x := 10'
         return parseAssignment();
     }
     else if (match(KEYWORD, "writeln")) {
         return parseWriteln();
     }
-    else if (match(KEYWORD, "end")) {
-        // Конец блока - не ошибка
-        return nullptr;
-    }
-
     throwError("Unknown statement: " + current().value, current().line);
-    return nullptr;
 }
 
 std::unique_ptr<ASTNode> Parser::parseAssignment() {
-
     auto node = std::make_unique<ASTNode>("Assignment");
-
     node->children.push_back(std::make_unique<ASTNode>("Variable", current()));
-
     advance();
-
-
-
     consume(OPERATOR, ":=", "Expected ':=' in assignment");
-
     node->children.push_back(std::move(parseExpression()));
 
     return node;
-
 }
 
-
-
 std::unique_ptr<ASTNode> Parser::parseExpression() {
-
     auto node = parseTerm();
 
     while (match(OPERATOR, "+") || match(OPERATOR, "-") || match(OPERATOR, "||")) {
-
         auto op_node = std::make_unique<ASTNode>("Operator", current());
-
         advance();
-
         op_node->children.push_back(std::move(node));
-
         op_node->children.push_back(std::move(parseTerm()));
-
         node = std::move(op_node);
-
     }
 
     return node;
-
 }
-
-
-
-// Добавьте в parser.cpp после существующих методов
-
-
 
 std::unique_ptr<ASTNode> Parser::parseVariableDeclaration() {
-
     auto node = std::make_unique<ASTNode>("VariableDeclaration");
-
-
-
-    // Читаем список идентификаторов
-
-    do {
-
-        consume(IDENTIFIER, "", "Expected identifier");
-
-        node->children.push_back(std::make_unique<ASTNode>("Variable", current()));
-
-        advance();
-
-
-
-        if (!match(DELIMITER, ",")) break;
-
-        advance();
-
-    } while (true);
-
-
-
-    consume(DELIMITER, ":", "Expected ':' after identifiers");
-
-
-
-    // Читаем тип
-
+    // Чтение идентификатора (например, 'x')
+    node->children.push_back(std::make_unique<ASTNode>("Variable", current()));
+    advance();
+    // Пропуск ':' и типа ('%', '!', '$')
+    consume(DELIMITER, ":", "Expected ':' in declaration");
     if (match(KEYWORD, "%") || match(KEYWORD, "!") || match(KEYWORD, "$")) {
-
         node->children.push_back(std::make_unique<ASTNode>("Type", current()));
-
         advance();
-
-    } else {
-
-        throwError("Expected type (% | ! | $)", current().line);
-
     }
-
-
-
-    consume(DELIMITER, ";", "Expected ';' after declaration");
-
     return node;
-
 }
 
-
-
 std::unique_ptr<ASTNode> Parser::parseTerm() {
-
     auto node = parseFactor();
 
     while (match(OPERATOR, "*") || match(OPERATOR, "/") || match(OPERATOR, "&&")) {
-
         auto op_node = std::make_unique<ASTNode>("Operator", current());
-
         advance();
-
         op_node->children.push_back(std::move(node));
-
         op_node->children.push_back(std::move(parseFactor()));
-
         node = std::move(op_node);
-
     }
 
     return node;
-
 }
 
-
-
 std::unique_ptr<ASTNode> Parser::parseFactor() {
-
     if (match(IDENTIFIER)) {
         auto node = std::make_unique<ASTNode>("Variable", current());
         advance();
